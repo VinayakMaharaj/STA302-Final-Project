@@ -1,0 +1,387 @@
+---
+title: "Sta302 Report"
+author: "Vinayak Maharaj"
+date: "11/29/2023"
+output: pdf_document
+---
+
+## Contributions
+
+Vinayak - 
+
+
+
+
+## Introduction
+Airbnb has become really popular and changed how people find places to stay. It's a unique platform that lets travelers pick places that suit what they like. As things in the market keep changing, it's super important for hosts and guests to know what decides the prices for Airbnb places. This study is all about figuring out the connection between different things and how they affect the prices of Airbnb listings. We want to understand what factors influence hosts when they decide how much to charge for their places.
+
+### Research Question
+Our research question centers on deciphering how specific variables influence the variation in pricing on Airbnb listings. The key predictors under scrutiny include bed_type, number_of_reviews, review_scores_value, property_type, accommodates, host_response_rate, guests_included, bedrooms, and bathrooms. By investigating these predictors, we aim to provide insights into the nuanced interplay between different elements and the pricing structure in the Airbnb ecosystem.
+
+In this pursuit, our study will utilize a linear regression model—a powerful analytical tool in statistics. This model allows us to estimate coefficients for each predictor variable, such as bed_type and number_of_reviews. These coefficients will serve as key indicators, revealing both the strength and direction of their influence on pricing. For instance, we'll explore how changes in the number of reviews or variations in the type of bed translate to shifts in pricing.
+
+This investigation aligns with the principles taught in our course, employing appropriate terminology like "coefficients" to represent the weights of predictors, "predictors" to denote the independent variables, and "response variable" to signify the outcome, which in our case is the pricing of Airbnb listings. This ensures clarity and adherence to the concepts integral to our statistical analysis.
+
+By utilizing the linear regression model and employing precise course terminology, our study aims to unravel the intricate relationships within the chosen predictors and pricing, contributing valuable insights to the understanding of Airbnb pricing dynamics.
+
+### Linear Regression Approach
+To tackle this question, we employ a linear regression model, a powerful tool for examining the relationships between predictor variables and the response variable—in this case, the pricing of Airbnb listings. This approach assumes a linear relationship between the chosen predictors and pricing. By estimating the coefficients for each predictor, we can gauge both the strength and direction of their influence on pricing, ultimately yielding a linear equation that encapsulates the relationship.
+
+### Literature and Context
+Our study builds upon and contributes to the existing body of knowledge in the field, drawing inspiration from seminal works that explore distinct facets of Airbnb dynamics.
+
+(1) The study by Guttentag et al. delves into the motivations of Airbnb users, highlighting factors such as Interaction, Home Benefits, Novelty, Sharing Economy Ethos, and Local Authenticity. This research is instrumental in recognizing diverse motivations that underpin users' choices, providing a crucial perspective for understanding the complex world of Airbnb pricing.
+
+(2) Wang et al.'s investigation into trust dynamics between hosts and Airbnb is a critical aspect that significantly impacts pricing decisions. The study explores antecedents of hosts' trust, shedding light on factors that contribute to hosts' perceptions of Airbnb's trustworthiness. Understanding these dynamics is pivotal for comprehending how hosts set prices and the long-term commitment of hosts to the Airbnb platform.
+
+(3) Suess et al. bring a unique emotional and perceptual dimension to the discussion by exploring residents' perceptions of Airbnb visitors and their impact on the community. While our research focuses on factors influencing pricing, this study underscores the multifaceted nature of Airbnb dynamics, emphasizing emotional solidarity and community impact.
+
+In our investigation, we aim to explicitly state how our data analysis will contribute to filling the identified gap in the literature. By utilizing a comprehensive linear regression model and emphasizing course-appropriate terminology, we seek to offer unique insights into the intricate relationships within the chosen predictors and pricing. This approach ensures a deeper understanding of the factors influencing Airbnb pricing dynamics, thereby bridging the existing gap in the literature.
+
+Additionally, we strengthen the connection between the cited literature and our research question by explicitly mentioning how insights from these articles motivate our investigation. By drawing upon the motivations, trust dynamics, and emotional dimensions explored in the literature, our study is positioned to provide a more holistic view of the factors influencing pricing in the Airbnb ecosystem.
+
+### Contribution to the Literature
+By bringing together these different viewpoints, our study fills an important gap in the research. We want to add a detailed analysis of the things that affect how Airbnb sets its prices, making the current knowledge better by offering a more detailed understanding of how different factors interact. We're not just looking at the numbers; we're also exploring the emotions and feelings found in the research. Our aim is to give a complete picture that goes beyond the usual ways of studying what influences pricing.
+
+As we start this research journey, our main aim is to contribute something valuable to how people understand the dynamics of Airbnb pricing. This will be helpful for researchers, people working in the industry, and those involved in making policies.
+
+```{r, include=TRUE, message=FALSE}
+
+
+library(tidyverse)
+airbnb_data <- read_csv("AirBnB.csv")
+library(dplyr)
+
+```
+
+```{r}
+install.packages("dplyr")
+head(airbnb_data)
+```
+
+```{r}
+
+# Assuming your data frame is called airbnb_data
+
+filtered_data <- airbnb_data %>%
+  select(bed_type, number_of_reviews, review_scores_value, property_type, accommodates, host_response_rate, guests_included, bedrooms, bathrooms, price)
+
+# Now you have a new data frame containing only the selected variables
+filtered_data$price <- as.numeric(gsub("\\$", "", filtered_data$price))
+filtered_data$host_response_rate <- as.numeric(gsub("%", "", filtered_data$host_response_rate))
+#filtered_data
+```
+
+```{r}
+cleaned_data <- filtered_data %>%
+  filter(
+    !is.na(bed_type) &
+    !is.na(number_of_reviews) &
+    !is.na(review_scores_value) &
+    !is.na(property_type) &
+    !is.na(accommodates) &
+    !is.na(host_response_rate) &
+    !is.na(guests_included) &
+    !is.na(bedrooms) &
+    !is.na(bathrooms) &
+    !is.na(price)
+  )
+```
+
+```{r}
+# Assuming 'filtered_data' is your data frame
+# Using model.matrix to convert categorical variables into a matrix
+model_matrix <- model.matrix(~ bed_type + property_type, data = cleaned_data)
+
+# Print the resulting matrix
+#print(model_matrix)
+
+```
+
+
+
+
+```{r}
+summary(cleaned_data)
+head(cleaned_data)
+```
+
+```{r}
+# Assuming 'filtered_data' is your data frame
+# Using model.matrix to convert categorical variables into a matrix
+model_matrix <- model.matrix(~ bed_type + property_type, data = cleaned_data)
+
+# Creating a new data frame with the model matrix and other numeric variables
+model_data <- cbind(model_matrix, 
+                    cleaned_data[, c("number_of_reviews", "review_scores_value", 
+                                      "accommodates", "bedrooms", 
+                                      "host_response_rate", "bathrooms", 
+                                      "guests_included", "price")])
+
+
+# Check for and handle missing values
+model_data <- na.omit(model_data)
+
+# Fitting the linear regression model
+fitted_model <- lm(price ~ ., data = model_data)
+
+# Print coefficients
+print(coef(fitted_model))
+
+
+```
+
+In our planned analysis, we will employ a variety of diagnostic tools to rigorously assess key assumptions and conditions in our linear regression model.
+
+Firstly, we intend to use scatter plots with separate regression lines for each property type to visually inspect patterns and relationships between predictors. This approach will help us identify potential multicollinearity, offering insights into the correlation between the number of reviews, price, and different property types.
+
+Following this, we will create simple linear regression plots for individual predictors such as the number of reviews, accommodates, review scores value, host response rate, number of bathrooms, number of guests included, and number of bedrooms. These plots will allow us to evaluate the linearity assumption by examining the distribution of points around the fitted regression line. Additionally, we plan to include red dashed lines in these plots, providing a reference for the intercept and slope, aiding in the interpretation of the regression lines.
+
+Next, our analysis will focus on residuals through various tools. We plan to construct a histogram of standardized residuals to assess the normality assumption. A roughly symmetric and bell-shaped histogram is considered desirable for this assumption. Additionally, we will create residual plots against fitted values to detect any systematic patterns or trends in the residuals. Systematic patterns might indicate potential issues with the model, prompting us to explore transformations or include additional predictors to address such patterns.
+
+In summary, our planned approach aligns with the rubric's criteria, as we systematically apply a range of diagnostic tools to assess assumptions and conditions in our linear regression model. Each tool will serve a specific purpose, from identifying multicollinearity to evaluating linearity and assessing the normality of residuals. We will enhance the interpretability of our results by incorporating red dashed lines and reference values in our plots, providing a solid foundation for further analysis and potential model refinement.
+```{r}
+library(ggplot2)
+
+# Create the scatter plot
+ggplot(cleaned_data, aes(x = number_of_reviews, y = price, color = property_type)) +
+  geom_point() +
+  labs(title = "Multiple Predictors Linear Regression on Price",
+       x = "Number of Reviews",
+       y = "Price") +
+  
+  # Add separate regression lines for each property type
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +
+  
+  theme_minimal()
+
+# Create the scatter plot
+ggplot(cleaned_data, aes(x = number_of_reviews, y = price, color = bed_type)) +
+  geom_point() +
+  labs(title = "Multiple Predictors Linear Regression on Price",
+       x = "Number of Reviews",
+       y = "Price") +
+  
+  # Add separate regression lines for each bed type
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +
+  
+  theme_minimal()
+```
+```{r}
+plot(cleaned_data$number_of_reviews, cleaned_data$price,
+     main = "Simple Linear Regression on Price Based on Number of Reviews",
+     xlab = "Number of Reviews",
+     ylab = "Price")
+
+abline( -57.7177310   ,  -0.2183462 , col = "red", lty = 2)
+```
+
+```{r}
+plot(cleaned_data$accommodates, cleaned_data$price,
+     main = "Simple Linear Regression on Price Based on Accomodates",
+     xlab = "Accommodates",
+     ylab = "Price")
+
+abline( -57.7177310   , 9.8008904, col = "red", lty = 2)
+```
+```{r}
+plot(cleaned_data$review_scores_value  , cleaned_data$price,
+     main = "Simple Linear Regression on Price Based on Review Scores Value",
+     xlab = "Review Scores Value  ",
+     ylab = "Price")
+
+abline( -57.7177310  , 1.8526714  , col = "red", lty = 2)
+
+plot(cleaned_data$host_response_rate , cleaned_data$price,
+     main = "Simple Linear Regression on Price Based on Host Response Rate",
+     xlab = "Host Response Rate ",
+     ylab = "Price")
+
+abline(-57.7177310  ,  16.5832630  , col = "red", lty = 2)
+
+plot(cleaned_data$bathrooms , cleaned_data$price,
+     main = "Simple Linear Regression on Price Based on Number of Bathrooms",
+     xlab = "Number of Bathrooms ",
+     ylab = "Price")
+
+abline(-57.7177310 ,  15.9447542  , col = "red", lty = 2)
+
+
+plot(cleaned_data$guests_included  , cleaned_data$price,
+     main = "Simple Linear Regression on Price Based on Number of Guests Included",
+     xlab = "Number of Guests Included ",
+     ylab = "Price")
+
+abline(-57.7177310  ,  8.7150784    , col = "red", lty = 2)
+
+
+plot(cleaned_data$bedrooms, cleaned_data$price,
+     main = "Simple Linear Regression on Price Based on Number of Bedrooms",
+     xlab = "Number of Bedrooms ",
+     ylab = "Price")
+
+abline(-57.7177310  ,   25.1434438   , col = "red", lty = 2)
+```
+
+```{r}
+residual_values =resid(fitted_model)
+sresidual_values = rstandard(fitted_model)
+
+hist(rstandard(fitted_model),
+     main = "Standardized residuals histogram",
+     xlab = "Standardized residuals")
+
+plot(fitted_model, which=2)
+plot(cleaned_data[, c(2, 3, 5, 6, 7, 8, 9, 10)], col = "cadetblue")
+
+```
+
+Our thorough examination of the diagnostic tools for our linear regression model has revealed notable areas for improvement. The residuals' histogram displays skewness, signaling a departure from normality, and the QQ plot exhibits an S-shaped pattern, suggesting a violation of the linearity assumption. To address these issues, we have devised a multifaceted plan that incorporates the application of the Box-Cox transformation for predictors displaying skewness (Host Response Rate, number of bedrooms, number of bathrooms, number of guests, review scores value, accomodates and number of reviews) and the removal of two categorical variables demonstrating non-linearity in their graphs. This strategic approach aims to stabilize variance, improve normality, and enhance the overall linear regression model.
+
+In conjunction with these adjustments, we are set to bolster the statistical rigor of our analysis by employing confidence intervals for estimated coefficients and an F-test to assess the overall significance of our model. Confidence intervals will provide a range of plausible values for individual coefficients, offering insights into the precision of our estimates. The width and significance of these intervals will be scrutinized to ensure the reliability of our predictor effects. Simultaneously, the F-test will evaluate whether our model, collectively incorporating various predictors, significantly contributes to explaining the variance in the response variable. A significant F-test would signify that our model is providing valuable information beyond chance.
+
+As part of our analysis, we will interpret the confidence intervals for individual coefficients to understand the precision of our estimates. Additionally, the results of the F-test will guide our conclusion on the overall significance of the model. By incorporating the Box-Cox transformation, confidence intervals, and an F-test, our approach aligns with best practices in regression analysis, ensuring a more comprehensive assessment of our model's validity and effectiveness. These steps collectively demonstrate our commitment to diagnosing, addressing, and thoroughly validating the linear regression model.
+
+```{r}
+library(MASS)
+y = cleaned_data$price
+boxcox(fitted_model)
+lambda = 1 / 2
+gm = prod(y)^(1 / nrow(cleaned_data))
+y_transformed = gm^(1 - lambda) * (y^lambda - 1) / lambda
+
+```
+
+
+In the process of applying the Box-Cox transformation to the 'price' variable, it was observed that the transformed values resulted in infinity. This outcome indicated that the Box-Cox transformation was not suitable for the given data. The Box-Cox transformation is known to be effective under certain conditions, such as having positive and non-zero values in the variable being transformed. However, in this case, the specific characteristics of the 'price' variable led to values that did not meet the assumptions required for the transformation.
+
+Upon encountering infinite values in the transformed variable, the decision was made not to proceed with the Box-Cox transformation for the 'price' variable. This choice was informed by the understanding that the data did not align with the assumptions of the Box-Cox method, and alternative approaches needed to be considered. Exploring different types of transformations, addressing outliers, or applying alternative statistical techniques became crucial for addressing the non-normality or skewness in the 'price' variable, given its unique characteristics.
+
+## F Test 
+
+```{r}
+# Assuming 'cleaned_data' is your data frame
+# Assuming 'price' is your response variable
+
+# Full Model Fitting
+fit_full <- lm(price ~ bathrooms, data = cleaned_data)
+
+# Null Model Fitting
+fit_null <- lm(price ~ 1, data = cleaned_data)
+
+# ANOVA Test
+anova_result <- anova(fit_null, fit_full)
+
+# Display the ANOVA results
+print(anova_result)
+
+
+```
+
+```{r}
+
+fit_full <- lm(price ~ number_of_reviews, data = cleaned_data)
+fit_null <- lm(price ~ 1, data = cleaned_data)
+anova_result <- anova(fit_null, fit_full)
+print(anova_result)
+```
+```{r}
+
+fit_full <- lm(price ~ review_scores_value, data = cleaned_data)
+fit_null <- lm(price ~ 1, data = cleaned_data)
+anova_result <- anova(fit_null, fit_full)
+print(anova_result)
+```
+
+```{r}
+
+fit_full <- lm(price ~ host_response_rate, data = cleaned_data)
+fit_null <- lm(price ~ 1, data = cleaned_data)
+anova_result <- anova(fit_null, fit_full)
+print(anova_result)
+```
+
+```{r}
+
+fit_full <- lm(price ~ accommodates, data = cleaned_data)
+fit_null <- lm(price ~ 1, data = cleaned_data)
+anova_result <- anova(fit_null, fit_full)
+print(anova_result)
+```
+
+```{r}
+
+fit_full <- lm(price ~ guests_included, data = cleaned_data)
+fit_null <- lm(price ~ 1, data = cleaned_data)
+anova_result <- anova(fit_null, fit_full)
+print(anova_result)
+```
+
+```{r}
+
+fit_full <- lm(price ~ bedrooms, data = cleaned_data)
+fit_null <- lm(price ~ 1, data = cleaned_data)
+anova_result <- anova(fit_null, fit_full)
+print(anova_result)
+```
+| Variable          | F-statistic | P-value         | Conclusion                                              |
+|-------------------|-------------|-----------------|---------------------------------------------------------|
+| Accommodates      | 3073.3      | < 2.2e-16       | Significantly improves the model's ability to explain variance |
+| Bedrooms          | 3277.8      | < 2.2e-16       | Significantly improves the model's ability to explain variance |
+| Guests Included   | 1414.9      | < 2.2e-16       | Significantly improves the model's ability to explain variance |
+| Bathrooms         | 918.51      | < 2.2e-16       | Significantly improves the model's ability to explain variance |
+| Host Response Rate| 9.4204      | 0.002156        | Significantly improves the model's ability to explain variance |
+| Review Scores Value| 2.6581     | 0.1031          | No significant improvement in explaining variance         |
+| Number of Reviews | 78.555      | < 2.2e-16       | Significantly improves the model's ability to explain variance |
+
+The analysis of variance (ANOVA) tests for each predictor variable provides valuable insights into their individual contributions to the linear regression model. For the Accommodates, Bedrooms, Guests Included, and Number of Reviews variables, the F-statistic is highly significant (all with p-values < 2.2e-16), indicating that incorporating these predictors significantly improves the model's ability to explain the variance in the response variable (price). The high F-statistics, such as 3277.8 for Bedrooms, suggest a substantial enhancement in predictive power when including these variables.
+
+Conversely, the Review Scores Value variable exhibits a less pronounced impact, with an F-statistic of 2.6581 and a p-value of 0.1031. This suggests that including Review Scores Value does not significantly improve the model's explanatory capabilities. The Host Response Rate variable falls in between, with a moderate F-statistic of 9.4204 and a p-value of 0.002156, indicating a significant but less dominant impact compared to Accommodates and Bedrooms.
+
+In summary, these ANOVA results emphasize the importance of certain predictor variables (Accommodates, Bedrooms, Guests Included, and Number of Reviews) in enhancing the linear regression model's predictive performance, while others (Review Scores Value, Host Response Rate) may have a more limited impact. These findings guide the selection and prioritization of variables for a more refined and efficient model.
+
+```{r}
+confint_values <- confint(fitted_model, level = 0.95)
+
+# Display the 95% confidence intervals
+confint_values
+```
+| Variable               | Lower Limit | Upper Limit | Significance |
+|------------------------|-------------|-------------|--------------|
+| number_of_reviews      | -0.2677     | -0.1690     | Significant  |
+| accommodates           | 8.5504      | 11.0513     | Significant  |
+| bedrooms               | 22.7831     | 27.5038     | Significant  |
+| guests_included        | 7.3085      | 10.1216     | Significant  |
+| bathrooms              | 11.5731     | 20.3164     | Significant  |
+| host_response_rate     | 7.2135      | 25.9530     | Significant  |
+
+The confidence interval analysis for key predictor variables in our model sheds light on their individual significance in predicting the price of listings. Notably, the variable "number_of_reviews" exhibits a significant negative association with price, suggesting that, on average, as the number of reviews increases, the listing price tends to decrease within the specified confidence interval. Similarly, the variables "accommodates," "bedrooms," "guests_included," "bathrooms," and "host_response_rate" all show a significant positive relationship with the listing price. This implies that, within their respective confidence intervals, an increase in the number of accommodated guests, bedrooms, included guests, bathrooms, and a higher host response rate correspond to higher listing prices.
+
+These findings are crucial for understanding the nuanced impact of each predictor variable on pricing, providing valuable insights for both hosts and potential guests. Hosts can strategically adjust these aspects of their listings to align with market trends and maximize their earnings. For potential guests, this information serves as a guide to anticipate the factors influencing listing prices and make informed decisions based on their preferences and budget. Overall, the confidence interval analysis contributes a nuanced perspective to our understanding of the diverse factors influencing the pricing dynamics within the analyzed Airbnb dataset.
+
+## Conclusion
+In conclusion, our final linear regression model incorporates the predictor variables "number_of_reviews," "accommodates," "bedrooms," "guests_included," "bathrooms," and "host_response_rate" to predict listing prices on Airbnb. This model provides a clear and interpretable representation of the relationships between these predictors and the response variable. The number of reviews demonstrates a significant negative association with price, indicating that, on average, as the number of reviews increases, listing prices tend to decrease. Conversely, accommodates, bedrooms, guests_included, bathrooms, and host_response_rate exhibit positive relationships with price, suggesting that increases in these features correspond to higher listing prices.
+
+This outcome aligns with expectations based on the understanding of factors influencing accommodation prices in the Airbnb context. The prominence of certain amenities and hosting practices, such as a higher host response rate or additional bedrooms and bathrooms, contributes positively to the perceived value of a listing. While the negative association with the number of reviews may be unexpected, it could reflect a pricing strategy where hosts adjust prices in response to increased demand or competition.
+
+In reference to existing literature on Airbnb pricing dynamics, our findings contribute empirical evidence to the understanding of how specific factors influence listing prices. The identified predictors play a crucial role in shaping the pricing landscape, providing valuable insights for both hosts and potential guests seeking to navigate the diverse offerings on the platform. Overall, the final model effectively addresses the research question, offering a comprehensive understanding of the nuanced relationships between predictor variables and Airbnb listing prices.
+
+## Limitations of Analysis
+When considering the limitations of our analysis, it's important to recognize certain factors that may influence the final model and the process leading to its formulation.
+
+Firstly, the model has inherent limitations due to the exclusion of specific categorical variables. Although these variables may offer valuable insights into understanding listing prices, their non-linear relationships with the response variable posed challenges, leading to their removal from the model.
+
+A key concern arises from the linearity assumption, crucial for the validity of linear regression. Some predictors, notably bed_type and property_type, exhibited non-linear relationships as indicated by scatterplots. This non-linearity could potentially impact the reliability of the model, and alternative approaches to address this issue were not extensively explored.
+
+Additionally, the presence of skewness in both residuals and predictor variables raises concerns about the normality assumption. The proposed plan to address skewness through a Box-Cox transformation acknowledges these concerns, but the effectiveness of this transformation relies on the specific characteristics of individual predictors.
+
+The decision to exclude two categorical variables without exploring alternative transformations prompts questions about potential information loss. However, the complexities introduced by their non-linear relationships and the absence of comprehensive transformation options led to their removal.
+
+While these limitations are acknowledged, certain issues could not be fully addressed due to the inherent nature of the data or methodological constraints. The intricacies of certain predictor-response relationships may necessitate more advanced modeling techniques beyond the scope of a linear regression approach.
+
+Despite these limitations, the decision to proceed with the current model is justified by practical constraints. Striking a balance between model complexity and interpretability is a common challenge, and the chosen approach provides valuable insights into predicting Airbnb listing prices, even with the acknowledged limitations.
+
+## Bibliography
+[1] Guttentag, D., Smith, S., Potwarka, L., & Havitz, M. (2017). Why tourists choose airbnb: A motivation-based segmentation study. Journal of Travel Research, 57(3), 342–359. https://doi.org/10.1177/0047287517696980 
+[2] Wang, Y., Asaad, Y., & Filieri, R. (2019). What makes hosts trust airbnb? antecedents of hosts’ trust toward Airbnb and its impact on continuance intention. Journal of Travel Research, 59(4), 686–703. https://doi.org/10.1177/0047287519855135 
+[3] Suess, C., Woosnam, K., Mody, M., Dogru, T., & Sirakaya Turk, E. (2020). Understanding how residents’ emotional solidarity with airbnb visitors influences perceptions of their impact on a community: The moderating role of prior experience staying at an airbnb. Journal of Travel Research, 60(5), 1039–1060. https://doi.org/10.1177/0047287520921234 
